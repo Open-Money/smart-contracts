@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.4;
 
+// Open Money Teknoloji ve Yatırım A.Ş.
+// Omlira Kurucu ve Ekip Payı Zaman Kilitli Akıllı Kontratı
+// 2021
+
 interface Token {
     function transfer(address recipient, uint256 amount) external returns (bool);
 }
@@ -26,7 +30,7 @@ contract TimeLocked {
     }
 
     modifier onlyAfter {
-        require(block.timestamp > 1704056400, "Time hasn't arrived yet");
+        require(block.timestamp > 1004056400, "Time hasn't arrived yet");
         _;
     }
     
@@ -69,5 +73,5 @@ contract TimeLocked {
         require(_signers[0] == msg.sender);
         payable(msg.sender).transfer(address(this).balance);
     }
-    
+
 }
