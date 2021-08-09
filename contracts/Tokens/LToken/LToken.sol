@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.4;
 
-// Open Money Teknoloji ve Yatırım A.Ş.
-// Omlira Kurucu ve Ekip Payı Zaman Kilitli Akıllı Kontratı
-// 2021
+// Author: Osman Kuzucu
+// https://github.com/open-money
+// osman@openmoney.com.tr
 
 import "../utils/Guarded.sol";
 import "../utils/TokenRecover.sol";

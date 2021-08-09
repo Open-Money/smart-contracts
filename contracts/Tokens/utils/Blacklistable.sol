@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.4;
 
+// Author: Osman Kuzucu
+// https://github.com/open-money
+// osman@openmoney.com.tr
+
 import "./Guarded.sol";
 
 contract Blacklistable is Guarded {
