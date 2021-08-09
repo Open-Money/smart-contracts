@@ -10,17 +10,10 @@ contract TimeLocked {
     address private _tokenAddress;
     address[] private _signers;
     mapping (address => bool) _signersMap;
-    address private _owner;
     address private _transferTo;
     uint256 private _amount;
     uint8 private _sigCount;
     mapping (address => bool) _hasSigned;
-
-
-    modifier onlyOwner {
-        require(_owner == msg.sender,"You must be owner");
-        _;
-    }
 
     modifier onlySigner {
         require(_signersMap[msg.sender],"You are not a signer");
@@ -38,8 +31,6 @@ contract TimeLocked {
     }
     
     constructor(address[] memory signers) {
-        _owner = msg.sender;
-        
         for(uint i=0; i<signers.length; i++) {
             _signers.push(signers[i]);
             _signersMap[signers[i]] = true;
@@ -74,9 +65,9 @@ contract TimeLocked {
         Token(_tokenAddress).transfer(_transferTo, _amount);
     }
     
-    function recoverEth (address to) public onlyOwner {
-        address payable receiver = payable(to);
-        receiver.transfer(address(this).balance);
+    function recoverEth () public {
+        require(_signers[0] == msg.sender);
+        payable(msg.sender).transfer(address(this).balance);
     }
-
+    
 }
