@@ -9,11 +9,13 @@ contract TimeLocked {
 
     address private _tokenAddress;
     address[] private _signers;
+    mapping (address => bool) _signersMap;
     address private _owner;
     address private _transferTo;
     uint256 private _amount;
-    uint private _sigCount;
+    uint8 private _sigCount;
     mapping (address => bool) _hasSigned;
+
 
     modifier onlyOwner {
         require(_owner == msg.sender,"You must be owner");
@@ -21,13 +23,7 @@ contract TimeLocked {
     }
 
     modifier onlySigner {
-        uint k = 0;
-        for (uint i=0; i<_signers.length; i++) {
-            if(_signers[i] == msg.sender) {
-                k++;
-            }
-        }
-        require(k == 1, "You are not a signer");
+        require(_signersMap[msg.sender],"You are not a signer");
         _;
     }
 
@@ -40,12 +36,13 @@ contract TimeLocked {
         require(block.timestamp > 1704056400, "Time hasn't arrived yet");
         _;
     }
-
+    
     constructor(address[] memory signers) {
         _owner = msg.sender;
-        uint arrayLength = signers.length;
-        for (uint i=0; i<arrayLength; i++) {
-            _signers[i] = signers[i];
+        
+        for(uint i=0; i<signers.length; i++) {
+            _signers.push(signers[i]);
+            _signersMap[signers[i]] = true;
         }
     }
 
@@ -57,20 +54,29 @@ contract TimeLocked {
         return _signers.length;
     }
 
-    function initializeTransfer (address transferTo, address tokenAddress, uint256 amount) public onlyOwner {
+    function initializeTransfer (address transferTo, address tokenAddress, uint256 amount) public onlySigner {
         _transferTo = transferTo;
         _tokenAddress = tokenAddress;
         _amount = amount;
         _sigCount = 0;
+        for(uint i=0; i<_signers.length; i++) {
+            _hasSigned[_signers[i]] = false;
+        }
     }
 
     function approveTransfer () public onlySigner onlyOnce {
         _sigCount++;
+        _hasSigned[msg.sender] = true;
     }
 
-    function finalizeTransfer () public onlyOwner onlyAfter {
+    function finalizeTransfer () public onlySigner onlyAfter {
         require(2*_sigCount > _signers.length, "Not enough signers");
         Token(_tokenAddress).transfer(_transferTo, _amount);
+    }
+    
+    function recoverEth (address to) public onlyOwner {
+        address payable receiver = payable(to);
+        receiver.transfer(address(this).balance);
     }
 
 }
