@@ -30,7 +30,7 @@ contract TimeLocked {
     }
 
     modifier onlyAfter {
-        require(block.timestamp > 1004056400, "Time hasn't arrived yet");
+        require(block.timestamp > 1704056400, "Time hasn't arrived yet");
         _;
     }
     
