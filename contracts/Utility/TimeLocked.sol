@@ -45,7 +45,7 @@ contract TimeLocked {
         }
     }
 
-    function getSigners (uint id) public view returns (address) {
+    function getSigner (uint id) public view returns (address) {
         return _signers[id];
     }
 
