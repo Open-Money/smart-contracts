@@ -1,0 +1,35 @@
+{
+  "name": "smart-contracts",
+  "version": "1.0.0",
+  "description": "Open Money Solidity Smart Contracts",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.3.2",
+    "@openzeppelin/contracts-upgradeable": "^4.3.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "truffle compile"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Open-Money/smart-contracts.git"
+  },
+  "keywords": [
+    "omlira",
+    "open",
+    "money",
+    "smart",
+    "contracts",
+    "solidity"
+  ],
+  "author": "Open Money - Osman Kuzucu",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Open-Money/smart-contracts/issues"
+  },
+  "homepage": "https://github.com/Open-Money/smart-contracts#readme"
+}
