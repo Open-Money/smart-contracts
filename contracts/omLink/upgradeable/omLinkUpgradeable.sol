@@ -5,14 +5,6 @@ pragma solidity ^0.8.7;
 // https://github.com/open-money
 // osman@openmoney.com.tr
 
-/**
-
-    @notice The current upgradeable pattern haven't been 
-    tested and is not completed. This contract is for educational 
-    purposes only.
-
- */
-
 import "./core/SignVerifierUpgradeable.sol";
 import "./includes/FiberUpgradeable.sol";
 import "./includes/TrackedUpgradeable.sol";

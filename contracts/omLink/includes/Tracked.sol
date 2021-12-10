@@ -35,6 +35,9 @@ contract Tracked {
 
     mapping (address => contractTrackerStruct) internal _tracker;
 
+    contractTrackerStruct _nativeTracker;
+
+
     /**
      * @dev modifier that checks whethether a nonce is used or not 
      * 
@@ -44,6 +47,11 @@ contract Tracked {
      */
     modifier nonUsedNonce(address token, uint nonce) {
         require(_tracker[token]._nonces[nonce]._isUsed == false, "Tracker: nonce already used");
+        _;
+    }
+
+    modifier nonUsedNativeNonce(uint nonce) {
+        require(_nativeTracker._nonces[nonce]._isUsed == false,"Tracker: native nonce already used");
         _;
     }
 
@@ -123,5 +131,35 @@ contract Tracked {
         return _tracker[token]._depositNonce;
     }
 
+    function nativeDepositNonce() internal {
+        _nativeTracker._depositNonce+=1;
+    }
+
+    function getNativeDepositNonce() public view returns (uint256) {
+        return _nativeTracker._depositNonce;
+    }
+
+    function isUsedNativeNonce(uint256 nonce) public view returns (bool) {
+        return(_nativeTracker._nonces[nonce]._isUsed);
+    }
+
+    function useNativeNonce(uint nonce) internal nonUsedNativeNonce(nonce) {
+        _nativeTracker._nonces[nonce]._isUsed = true;
+        _nativeTracker._nonces[nonce]._inBlock = block.number;
+
+        /**
+         * Sets the contract's biggest withdraw nonce 
+         * if current withdraw nonce is the known biggest one
+         * 
+         * this is for information purposes only
+         */
+        if(nonce > _nativeTracker._biggestWithdrawNonce) {
+            _nativeTracker._biggestWithdrawNonce = nonce;
+        }
+
+        emit NativeNonceUsed(nonce,block.number);
+    }
+
     event NonceUsed(address token, uint256 nonce, uint256 blockNumber);
+    event NativeNonceUsed(uint256 nonce, uint256 blockNumber);
 }

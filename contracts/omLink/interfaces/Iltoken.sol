@@ -9,7 +9,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface ILToken is IERC20 {
     function masterMint(address account, uint256 amount) external returns (bool);
-    function masterBurnFrom(address account, uint256 amount) external returns (bool);
     function mintTo (address account, uint256 amount) external returns (bool);
     function burnFrom (address account, uint256 amount) external returns (bool);
 

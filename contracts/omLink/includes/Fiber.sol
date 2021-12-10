@@ -16,6 +16,8 @@ contract Fiber is Guarded, Blacklistable, TokenRecover {
 
     mapping (address => bool) internal _verifiedSigners;
 
+    bool private _isSupportedNative = false;
+
     /**
      * @dev modifier that checks whether the link token is supported or not
      */
@@ -29,6 +31,11 @@ contract Fiber is Guarded, Blacklistable, TokenRecover {
      */
     modifier onlyVerifiedSigner(address signer) {
         require(_verifiedSigners[signer] == true,"Tracked:signer is not verified");
+        _;
+    }
+
+    modifier isSupportedNative() {
+        require(_isSupportedNative,"Fiber: Native not supported");
         _;
     }
 
@@ -102,6 +109,12 @@ contract Fiber is Guarded, Blacklistable, TokenRecover {
     {
         _supportedTokens[contractAddress] = false;
         _isLinkToken[contractAddress] = false;
+        return true;
+    }
+
+    function changeNativeSupport(bool newValue) public onlyOwner() returns (bool)
+    {
+        _isSupportedNative = newValue;
         return true;
     }
 

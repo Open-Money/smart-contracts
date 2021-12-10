@@ -14,6 +14,16 @@ contract SignVerifier {
         address signer;
     }
 
+    struct NativeMessage {
+        uint256 networkId;
+        address from;
+        address to;
+        uint256 amount;
+        uint256 nonce;
+        bytes signature;
+        address signer;
+    }
+
     /**
      * @dev function that returns the hash of the encoded message
      * @param networkId ID of the network
@@ -36,6 +46,18 @@ contract SignVerifier {
         public pure returns (bytes32)
     {
         return keccak256(abi.encodePacked(networkId,token,from,to,amount,nonce));
+    }
+
+    function getNativeMessageHash(
+        uint256 networkId,
+        address from,
+        address to,
+        uint256 amount,
+        uint256 nonce
+    )
+        public pure returns (bytes32)
+    {
+        return keccak256(abi.encodePacked(networkId,from,to,amount,nonce));
     }
 
     /**
@@ -72,6 +94,23 @@ contract SignVerifier {
         bytes32 ethSignedMessageHash_ = getEthSignedMessageHash(messageHash_);
 
         return recoverSigner(ethSignedMessageHash_, finalizeMessage.signature) == finalizeMessage.signer;
+    }
+
+    function verifyNative(
+        NativeMessage memory finalizeMessage
+    )
+        public pure returns (bool)
+    {
+        bytes32 messageHash_ = getNativeMessageHash(
+            finalizeMessage.networkId,
+            finalizeMessage.from,
+            finalizeMessage.to,
+            finalizeMessage.amount,
+            finalizeMessage.nonce
+        );
+        bytes32 ethSignedMessageHash_ = getEthSignedMessageHash(messageHash_);
+
+        return recoverSigner(ethSignedMessageHash_,finalizeMessage.signature) == finalizeMessage.signer;
     }
 
     /**

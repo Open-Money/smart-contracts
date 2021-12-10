@@ -16,7 +16,6 @@ abstract contract Guarded is AccessControl{
 
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-    bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
     
     address private _owner;
     bool private _paused;
@@ -35,11 +34,6 @@ abstract contract Guarded is AccessControl{
 
     modifier onlyMinter () {
         require(hasRole(MINTER_ROLE, _msgSender()), "Guard: not minter");
-        _;
-    }
-
-    modifier onlyBurner () {
-        require(hasRole(BURNER_ROLE, _msgSender()),"Guard: not burner");
         _;
     }
 

@@ -32,11 +32,22 @@ contract OmLink is Fiber, SignVerifier, Tracked
     /**
      * @dev chain ID of the contract where it is deployed
      *
-     * 1 for ETH
-     * 2 for BSC
-     * 3 for omChain
-     * 4 for Avalanche
+     * 1 for ETH mainnet
+     * 3 for ETH ropsten testnet
+     * 4 for ETH rinkeby testnet
+     * 5 for ETH goerli testnet
      * 
+     * 56 for BSC mainnet
+     * 97 for BSC testnet
+     *
+     * 43114 for Avalanche mainnet
+     * 43113 for Avalanche testnet
+     *
+     * 9102020 for omChain Jupiter testnet
+     * 21816 for omChain mainnet
+     * 14521 for omChain local testnet 1
+     * 14522 for omChain local testnet 2
+     *
      */
     uint256 public _chainId;
 
@@ -81,7 +92,7 @@ contract OmLink is Fiber, SignVerifier, Tracked
         uint256 toChain,
         address token,
         address to,
-        uint amount
+        uint256 amount
     ) public 
         onlySupportedToken(token) 
         notBlacklisted(msg.sender)
@@ -117,6 +128,49 @@ contract OmLink is Fiber, SignVerifier, Tracked
             return true;
     }
 
+    /**
+     * @dev deposit function for native tokens
+     * 
+     * emits {LinkStarted} event with address(0) as contract address
+     * 
+     * @param toChain target chain id
+     * @param to receiving address
+     * @param amount receiving amount
+     *
+     * @return bool
+     *
+     */
+    function depositNative(
+        uint256 toChain,
+        address to,
+        uint256 amount
+    ) payable public 
+        isSupportedNative()
+        notBlacklisted(msg.sender)
+        notBlacklisted(to)
+        nonPaused()
+        returns (bool) {
+            /**
+             * @dev checks whether the amount calling the function 
+             * is equal with the actual transacted native token
+             * reverts if not
+             *
+             * @notice because the native token deposit is already 
+             * credited with the transaction, we don't require 
+             * any transfer event
+             */
+            require(msg.value == amount,"omLink: wrong native amount");
+
+            /**
+             * @dev increments the native deposit nonce
+             *
+             */
+            nativeDepositNonce();
+
+            emit LinkStarted(toChain,address(0),msg.sender,to,amount,getNativeDepositNonce());
+
+            return true;
+    }
 
     /**
      *
@@ -185,9 +239,7 @@ contract OmLink is Fiber, SignVerifier, Tracked
             messageStruct_.signature = signature;
             messageStruct_.signer = signer;
 
-            if( !verify(messageStruct_) ) {
-                return false;
-            }
+            require(verify(messageStruct_),"omLink: signature cant be verified");
 
             /** 
              * 
@@ -196,10 +248,11 @@ contract OmLink is Fiber, SignVerifier, Tracked
              */
 
             useNonce(token,nonce);
+
             if( isLinkToken(token) ) {
                 ERC20Tokens(token).mintTo(to,amount);
             } else {
-                ERC20Tokens(token).transfer(to,amount);
+                IERC20(token).safeTransfer(to,amount);
             }
 
             /** 
@@ -220,9 +273,98 @@ contract OmLink is Fiber, SignVerifier, Tracked
             return true;
     }
 
+    /**
+     * 
+     * @dev implementation of the link finalizer on receiving native currency
+     * this function processes the coupon provided by the verified signer and 
+     * transfers the amount of native tokens to the receiving address
+     *
+     * Checks for whether native token bridging is supported on deployed network
+     * Checks whether the sending or receiving address is blacklisted
+     * Checks for signature provided and signer
+     *
+     * @param toChain the chainId of the receiving chain
+     * @param from the sender
+     * @param to the receiver
+     * @param amount the amount of tokens to be minted & transferred from
+     * @param nonce the nonce of the transaction coupon
+     * @param signature the signed message from the server
+     * @param signer the address of the coupon signer
+     * 
+     * @return bool
+     * */
+    function finalizeNative(
+        uint256 toChain,
+        address from,
+        address to,
+        uint256 amount,
+        uint256 nonce,
+        bytes memory signature,
+        address signer
+    ) public 
+        isSupportedNative()
+        notBlacklisted(msg.sender)
+        notBlacklisted(to)
+        nonPaused()
+        onlyVerifiedSigner(signer)
+        returns (bool) {
+            require(_chainId == toChain,"omLink:incorrect chain");
+            require(!isUsedNativeNonce(nonce),"Tracked:used nonce");
+
+            NativeMessage memory messageStruct_;
+
+            messageStruct_.networkId = toChain;
+            messageStruct_.from = from;
+            messageStruct_.to = to;
+            messageStruct_.amount = amount;
+            messageStruct_.nonce = nonce;
+            messageStruct_.signature = signature;
+            messageStruct_.signer = signer;
+
+            require(verifyNative(messageStruct_),"omLink: message cant be verified");
+            require(address(this).balance >= amount,"omLink: not enough native");
+
+            useNativeNonce(nonce);
+
+            address payable receiver = payable(to);
+            receiver.transfer(amount);
+
+            emit LinkFinalized(
+                messageStruct_.networkId,
+                address(0),
+                messageStruct_.from,
+                messageStruct_.to,
+                messageStruct_.amount,
+                messageStruct_.nonce,
+                messageStruct_.signer
+            );
+
+            return true;
+
+        }
+
+    function invalidateNonce(address token, uint256 nonce) public onlyOwner returns (bool) {
+        
+        require(!isUsedNonce(token,nonce),"Tracked:used nonce");
+        useNonce(token,nonce);
+
+        emit NonceInvalidated(_chainId,token,msg.sender,nonce,block.number);
+        return true;
+    }
+
+    function invalidateNative(uint256 nonce) public onlyOwner returns (bool) {
+        require(!isUsedNativeNonce(nonce),"Tracked:used nonce");
+        useNativeNonce(nonce);
+
+        emit NativeNonceInvalidated(_chainId,msg.sender,nonce,block.number);
+        return true;
+    }
+
+
     event LinkStarted(uint256 toChain, address tokenAddress, address from, address to, uint256 amount, uint256 indexed depositNonce);
     event LinkFinalized(uint256 chainId, address tokenAddress, address from, address to, uint256 amount, uint256 indexed nonce, address signer);
-
-
+    
+    event NonceInvalidated(uint256 chainId, address tokenAddress, address owner, uint256 indexed nonce, uint atBlock);
+    event NativeNonceInvalidated(uint256 chainId, address owner, uint256 indexed nonce, uint atBlock);
 
 }
